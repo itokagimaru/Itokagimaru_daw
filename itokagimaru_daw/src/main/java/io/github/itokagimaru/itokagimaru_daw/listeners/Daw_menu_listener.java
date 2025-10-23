@@ -14,8 +14,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import io.github.itokagimaru.itokagimaru_daw.Itokagimaru_daw;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.*;
 
 public class Daw_menu_listener implements Listener {
     @EventHandler
@@ -282,9 +281,16 @@ public class Daw_menu_listener implements Listener {
             }else if (clicked.getType() == Material.PAPER && Objects.requireNonNull(meta.getItemModel()).equals(NamespacedKey.minecraft("next_b_right"))) {
                 double bpm = (double) openMenu.daw_play_getBPM(Objects.requireNonNull(clicked_inv.getItem(2)));
                 clicked.setItemMeta(makeItem.make_itemmeta(clicked,"再生停止",null, "elytra", null, null));
+                Itokagimaru_daw.operation_playing playing = new Itokagimaru_daw.operation_playing();
                 Itokagimaru_daw.play play = new Itokagimaru_daw.play();
+                playing.set_playing(player,play);
                 play.play_music(player,(long) (1200/bpm));
 
+            }else if (clicked.getType() == Material.PAPER && Objects.requireNonNull(meta.getItemModel()).equals(NamespacedKey.minecraft("elytra"))) {
+                Itokagimaru_daw.operation_playing playing = new Itokagimaru_daw.operation_playing();
+                Itokagimaru_daw.play play = playing.get_playing(player);
+                clicked.setItemMeta(makeItem.make_itemmeta(clicked, "再生", null, "next_b_right", null, null));
+                play.stop_task();
             }
         } else if (event.getView().title().equals(Component.text("§b設定/BPM"))) {
             event.setCancelled(true);

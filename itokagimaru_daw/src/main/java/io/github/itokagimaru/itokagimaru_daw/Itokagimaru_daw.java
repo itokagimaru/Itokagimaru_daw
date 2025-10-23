@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -36,6 +37,15 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
     public static NamespacedKey tempo_key = new NamespacedKey("itokagimaru_daw", "tempo");
     public static NamespacedKey topnote_key = new NamespacedKey("itokagimaru_daw", "topnote");
     public static Itokagimaru_daw instance;
+    public static Optional<HashMap<UUID,Itokagimaru_daw.play>> playing = Optional.of(new HashMap<>());
+    public static class operation_playing{
+        public void set_playing(Player player,Itokagimaru_daw.play play){
+            playing.get().put(player.getUniqueId(),play);
+        }
+        public Itokagimaru_daw.play get_playing(Player player){
+            return playing.get().get(player.getUniqueId());
+        }
+    }
     public static class get_key{
         public NamespacedKey page_key(){
             return page_key;
@@ -330,6 +340,13 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
             int bpm_int = Integer.parseInt(Objects.requireNonNull(bpm_tag));
             return bpm_int;
         }
+        public boolean get_playmode(Player player) {
+            Inventory inv = player.getOpenInventory().getTopInventory();
+            ItemStack itemStack = inv.getItem(4);
+            boolean tes = (itemStack.getType() == Material.PAPER && Objects.equals(itemStack.getItemMeta().getItemModel(), NamespacedKey.minecraft("clock")));
+            player.sendMessage(String.valueOf(tes));
+            return (itemStack.getType() == Material.PAPER && Objects.equals(itemStack.getItemMeta().getItemModel(), NamespacedKey.minecraft("clock")));
+        }
     }
     public static class inventory_save {
         public static HashMap<UUID, ItemStack[]> inv=new HashMap<>();
@@ -370,25 +387,28 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
     public static class play {
         music music = new music();
         HashMap<UUID , BukkitTask> tasks = new HashMap<>();
-        public void stop_my_play(Player player){
-            if (tasks.get(player.getUniqueId()) != null) {
-                BukkitTask task =tasks.get(player.getUniqueId());
-                task.cancel();
-                tasks.remove(player.getUniqueId());
-            }
-
-
+        public void set_task(Player player,BukkitTask task){
+            tasks.put(player.getUniqueId(),task);
         }
+        public void remove_task(Player player){
+            tasks.remove(player.getUniqueId());
+        }
+//        public void stop_task(Player player){
+//            BukkitTask task = tasks.get(player.getUniqueId());
+//            player.sendMessage(String.valueOf(task));
+//            task.cancel();
+//            remove_task(player);
+//        }
+        BukkitTask task;
         public void play_music (Player player,long interval){
-            BukkitTask task = new BukkitRunnable() {
+            task = new BukkitRunnable() {
                 final int[] loded_music = music.load_Music(player);
                 int count = 0;
                 float pitch = 0;
+                final open_menu open_menu = new open_menu();
                 @Override
                 public void run() {
-
-
-                    if (loded_music[count] == -1 || count >= loded_music.length) {
+                    if (loded_music[count] == -1 || count >= loded_music.length || open_menu.get_playmode(player)) {
                         cancel();
                     }else if(loded_music[count] != 0){
                         pitch = (float) Math.pow(2.0 , (double) (14 - loded_music[count]) / 12);
@@ -397,7 +417,9 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
                     count++;
                 }
             }.runTaskTimer(getInstance(),0,(long) interval);
-            tasks.put(player.getUniqueId(),task);
+        }
+        public void stop_task(){
+            task.cancel();
         }
     }
 }
