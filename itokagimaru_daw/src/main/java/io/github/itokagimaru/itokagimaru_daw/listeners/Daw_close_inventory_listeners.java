@@ -29,6 +29,10 @@ public class Daw_close_inventory_listeners implements Listener {
             loded_music[music_end_point] = -1;
             music.saveMusic(p, loded_music);
             inventory_lode.loadInventory(p);
+        }else if (e.getView().title().equals(Component.text("§b再生モード"))){
+            Itokagimaru_daw.operation_playing playing = new Itokagimaru_daw.operation_playing();
+            Itokagimaru_daw.play play = playing.get_playing(p);
+            play.stop_task();
         }
     }
 }

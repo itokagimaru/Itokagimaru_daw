@@ -37,6 +37,8 @@ public class Daw_menu_listener implements Listener {
             } else if (clicked.getType() == Material.MUSIC_DISC_13 && Objects.requireNonNull(meta.displayName()).equals(Component.text("§e再生モード"))) {
                 player.closeInventory();
                 openMenu.daw_play_mode(player,null);
+            } else if (clicked.getType() == Material.BARRIER && Objects.requireNonNull(meta.displayName()).equals(Component.text("§4しゅうりょう"))) {
+                player.closeInventory();
             }
         } else if (event.getView().title().equals(Component.text("§b打ち込みモード"))) {
 

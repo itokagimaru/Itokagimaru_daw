@@ -162,15 +162,11 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
 
             ItemStack writable = new ItemStack(Material.WRITABLE_BOOK);
             writable.setItemMeta(makeitem.make_itemmeta(writable,"§e打ち込みモード",null,null,null,null));
-            menu.setItem(2, writable);
+            menu.setItem(3, writable);
 
             ItemStack disc = new ItemStack(Material.MUSIC_DISC_13);
             disc.setItemMeta(makeitem.make_itemmeta(disc,"§e再生モード",null,null,null,null));
-            menu.setItem(4, disc);
-
-            ItemStack note = new ItemStack(Material.NOTE_BLOCK);
-            note.setItemMeta(makeitem.make_itemmeta(note,"§e演奏モード",null,null,null,null));
-            menu.setItem(6, note);
+            menu.setItem(5, disc);
 
             ItemStack bar = new ItemStack(Material.BARRIER);
             bar.setItemMeta(makeitem.make_itemmeta(bar,"§4しゅうりょう",null,null,null,null));
@@ -387,18 +383,6 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
     public static class play {
         music music = new music();
         HashMap<UUID , BukkitTask> tasks = new HashMap<>();
-        public void set_task(Player player,BukkitTask task){
-            tasks.put(player.getUniqueId(),task);
-        }
-        public void remove_task(Player player){
-            tasks.remove(player.getUniqueId());
-        }
-//        public void stop_task(Player player){
-//            BukkitTask task = tasks.get(player.getUniqueId());
-//            player.sendMessage(String.valueOf(task));
-//            task.cancel();
-//            remove_task(player);
-//        }
         BukkitTask task;
         public void play_music (Player player,long interval){
             task = new BukkitRunnable() {
@@ -408,11 +392,11 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
                 final open_menu open_menu = new open_menu();
                 @Override
                 public void run() {
-                    if (loded_music[count] == -1 || count >= loded_music.length || open_menu.get_playmode(player)) {
+                    if (loded_music[count] == -1 || count >= loded_music.length) {
                         cancel();
                     }else if(loded_music[count] != 0){
                         pitch = (float) Math.pow(2.0 , (double) (14 - loded_music[count]) / 12);
-                        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1.0f,pitch);
+                        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 3.0f,pitch);
                     }
                     count++;
                 }
