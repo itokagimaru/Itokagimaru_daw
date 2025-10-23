@@ -1,0 +1,4 @@
+name: itokagimaru_daw
+version: '1.0-SNAPSHOT'
+main: io.github.itokagimaru.itokagimaru_daw.Itokagimaru_daw
+api-version: '1.21'
