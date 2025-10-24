@@ -312,21 +312,25 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
             player.openInventory(menu);
         }
         public void daw_play_setBPM(Player player, int bpm) {
-            Inventory menu = Bukkit.createInventory(null,9, Component.text("§b設定/BPM"));
-            ItemStack paper = new ItemStack(Material.PAPER);
-            paper.setItemMeta(makeitem.make_itemmeta(paper,"現在のBPM:" + String.valueOf(bpm),null,"clock",BPM_key,String.valueOf(bpm)));
-
-            menu.setItem(4, paper);
-            ItemStack green = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
-            ItemStack red = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-            for (int i = 3; i > 0 ; i--){
-                red.setItemMeta(makeitem.make_itemmeta(red,"-" + String.valueOf((int) Math.pow(10,3-i)),null,null,itemTag_key,String.valueOf((int) Math.pow(10,3-i) * -1)));
-                menu.setItem(i, red);
+            int[] bpmlist = {1,2,3,4,5,6,8,10,12,15,16,20,24,25,30,40,48,50,60,75,80,100,120,150,200,240,300,400,600,1200};
+            int selected_bpm = 0;
+            for (int i = 0;i < bpmlist.length;i++) {
+                if (bpm == bpmlist[i]){
+                    selected_bpm = i;
+                }
             }
-
-            for (int i = 1; i <= 3 ; i++){
-                green.setItemMeta(makeitem.make_itemmeta(green,"+" + String.valueOf((int) Math.pow(10,i-1)),null,null,itemTag_key,String.valueOf((int) Math.pow(10,i-1))));
-                menu.setItem(i + 4, green);
+            if (selected_bpm >bpmlist.length-7 ) selected_bpm = bpmlist.length-7;
+            Inventory menu = Bukkit.createInventory(null, 9, Component.text("§b設定/BPM"));
+            ItemStack left = new ItemStack(Material.PAPER);
+            ItemStack right = new ItemStack(Material.PAPER);
+            left.setItemMeta(makeitem.make_itemmeta(left,"",null, "next_b_left",null,null));
+            right.setItemMeta(makeitem.make_itemmeta(right,"",null, "next_b_right",null,null));
+            menu.setItem(0, left);
+            menu.setItem(8, right);
+            ItemStack green = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
+            for(int i=0; i<7;i++){
+                green.setItemMeta(makeitem.make_itemmeta(green,"set:" + String.valueOf(bpmlist[selected_bpm + i]),null, null,itemTag_key,String.valueOf(bpmlist[selected_bpm + i])));
+                menu.setItem(i+1, green);
             }
             player.openInventory(menu);
         }
@@ -335,13 +339,6 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
             String bpm_tag = bpm_meta.getPersistentDataContainer().get(BPM_key, PersistentDataType.STRING);
             int bpm_int = Integer.parseInt(Objects.requireNonNull(bpm_tag));
             return bpm_int;
-        }
-        public boolean get_playmode(Player player) {
-            Inventory inv = player.getOpenInventory().getTopInventory();
-            ItemStack itemStack = inv.getItem(4);
-            boolean tes = (itemStack.getType() == Material.PAPER && Objects.equals(itemStack.getItemMeta().getItemModel(), NamespacedKey.minecraft("clock")));
-            player.sendMessage(String.valueOf(tes));
-            return (itemStack.getType() == Material.PAPER && Objects.equals(itemStack.getItemMeta().getItemModel(), NamespacedKey.minecraft("clock")));
         }
     }
     public static class inventory_save {
@@ -390,13 +387,17 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
                 int count = 0;
                 float pitch = 0;
                 final open_menu open_menu = new open_menu();
+                Itokagimaru_daw.make_item makeitem = new Itokagimaru_daw.make_item();
                 @Override
                 public void run() {
                     if (loded_music[count] == -1 || count >= loded_music.length) {
+                        ItemStack play = new ItemStack(Material.PAPER);
+                        play.setItemMeta(makeitem.make_itemmeta(play,"再生",null,"next_b_right",null,null));
+                        player.getOpenInventory().getTopInventory().setItem(4,play);
                         cancel();
                     }else if(loded_music[count] != 0){
                         pitch = (float) Math.pow(2.0 , (double) (14 - loded_music[count]) / 12);
-                        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 3.0f,pitch);
+                        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1.9f,pitch);
                     }
                     count++;
                 }
