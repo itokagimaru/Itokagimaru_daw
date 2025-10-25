@@ -342,7 +342,7 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
         }
     }
     public static class inventory_save {
-        public static HashMap<UUID, ItemStack[]> inv=new HashMap<>();
+        private HashMap<UUID, ItemStack[]> inv=new HashMap<>();
         public void seaveInventory(Player player){
             inv.put(player.getUniqueId(),player.getInventory().getContents().clone());
         }
@@ -356,7 +356,7 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
         }
     }
     public static class music {
-        public static Map<UUID, int[]> saved_music = new HashMap<>();
+        private Map<UUID, int[]> saved_music = new HashMap<>();
         public void saveMusic(Player player , int[] music){
             saved_music.put(player.getUniqueId(),music);
         }
