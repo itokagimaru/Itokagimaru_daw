@@ -14,8 +14,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import io.github.itokagimaru.itokagimaru_daw.Itokagimaru_daw;
 import org.bukkit.persistence.PersistentDataType;
 
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.*;
 
 public class Daw_menu_listener implements Listener {
     @EventHandler
@@ -23,6 +22,7 @@ public class Daw_menu_listener implements Listener {
         Itokagimaru_daw.open_menu openMenu = new Itokagimaru_daw.open_menu();
         Itokagimaru_daw.make_item makeItem = new Itokagimaru_daw.make_item();
         Itokagimaru_daw.music saveMusic = new Itokagimaru_daw.music();
+        Itokagimaru_daw.get_key getKey = new Itokagimaru_daw.get_key();
 
         if (event.getView().getTitle().equals("§bだう")) {
             event.setCancelled(true);
@@ -38,6 +38,8 @@ public class Daw_menu_listener implements Listener {
             } else if (clicked.getType() == Material.MUSIC_DISC_13 && Objects.requireNonNull(meta.displayName()).equals(Component.text("§e再生モード"))) {
                 player.closeInventory();
                 openMenu.daw_play_mode(player,null);
+            } else if (clicked.getType() == Material.BARRIER && Objects.requireNonNull(meta.displayName()).equals(Component.text("§4しゅうりょう"))) {
+                player.closeInventory();
             }
         } else if (event.getView().title().equals(Component.text("§b打ち込みモード"))) {
 
@@ -282,9 +284,16 @@ public class Daw_menu_listener implements Listener {
             }else if (clicked.getType() == Material.PAPER && Objects.requireNonNull(meta.getItemModel()).equals(NamespacedKey.minecraft("next_b_right"))) {
                 double bpm = (double) openMenu.daw_play_getBPM(Objects.requireNonNull(clicked_inv.getItem(2)));
                 clicked.setItemMeta(makeItem.make_itemmeta(clicked,"再生停止",null, "elytra", null, null));
+                Itokagimaru_daw.operation_playing playing = new Itokagimaru_daw.operation_playing();
                 Itokagimaru_daw.play play = new Itokagimaru_daw.play();
+                playing.set_playing(player,play);
                 play.play_music(player,(long) (1200/bpm));
 
+            }else if (clicked.getType() == Material.PAPER && Objects.requireNonNull(meta.getItemModel()).equals(NamespacedKey.minecraft("elytra"))) {
+                Itokagimaru_daw.operation_playing playing = new Itokagimaru_daw.operation_playing();
+                Itokagimaru_daw.play play = playing.get_playing(player);
+                clicked.setItemMeta(makeItem.make_itemmeta(clicked, "再生", null, "next_b_right", null, null));
+                play.stop_task();
             }
         } else if (event.getView().title().equals(Component.text("§b設定/BPM"))) {
             event.setCancelled(true);
@@ -298,19 +307,31 @@ public class Daw_menu_listener implements Listener {
             Inventory clicked_inv = event.getClickedInventory();
             if (clicked.getType() == Material.LIME_STAINED_GLASS_PANE && meta.getPersistentDataContainer().get(new NamespacedKey("itokagimaru_daw", "itemtag"), PersistentDataType.STRING) != null) {
                 int tag_int =Integer.parseInt(meta.getPersistentDataContainer().get(new NamespacedKey("itokagimaru_daw", "itemtag"), PersistentDataType.STRING));
-                ItemStack BPM_item = Objects.requireNonNull(clicked_inv).getItem(4);
-                int current_BPM = Integer.parseInt(BPM_item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey("itokagimaru_daw","bpm"), PersistentDataType.STRING));
-                openMenu.daw_play_setBPM(player, current_BPM + tag_int);
-            }else if (clicked.getType() == Material.RED_STAINED_GLASS_PANE && meta.getPersistentDataContainer().get(new NamespacedKey("itokagimaru_daw", "itemtag"), PersistentDataType.STRING) != null) {
-                int tag_int =Integer.parseInt(meta.getPersistentDataContainer().get(new NamespacedKey("itokagimaru_daw", "itemtag"), PersistentDataType.STRING));
-                ItemStack BPM_item = Objects.requireNonNull(clicked_inv).getItem(4);
-                int current_BPM = Integer.parseInt(BPM_item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey("itokagimaru_daw","bpm"), PersistentDataType.STRING));
-                if (current_BPM + tag_int < 1)current_BPM = tag_int * -1 + 1;
-                openMenu.daw_play_setBPM(player, current_BPM + tag_int);
-            } else if (clicked.getType() == Material.PAPER && Objects.equals(meta.getItemModel(), NamespacedKey.minecraft("clock"))) {
-                ItemStack BPM_item = Objects.requireNonNull(clicked_inv).getItem(4);
-                int current_BPM = Integer.parseInt(BPM_item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey("itokagimaru_daw","bpm"), PersistentDataType.STRING));
-                openMenu.daw_play_mode(player,current_BPM);
+                openMenu.daw_play_mode(player, tag_int);
+            }else if (clicked.getType() == Material.PAPER && Objects.equals(meta.getItemModel(), NamespacedKey.minecraft("next_b_right"))) {
+                int bpm =Integer.parseInt(Objects.requireNonNull(player.getOpenInventory().getTopInventory().getItem(1)).getPersistentDataContainer().get(getKey.itemTag_key(), PersistentDataType.STRING));
+                int[] bpmlist = {1,2,3,4,5,6,8,10,12,15,16,20,24,25,30,40,48,50,60,75,80,100,120,150,200,240,300,400,600,1200};
+                int selected_bpm = 0;
+                for (int i = 0;i < bpmlist.length;i++) {
+                    if (bpm == bpmlist[i]){
+                        selected_bpm = i;
+                    }
+                }
+                if (selected_bpm >bpmlist.length-7 ) selected_bpm = bpmlist.length-7;
+
+                openMenu.daw_play_setBPM(player, bpmlist[selected_bpm + 1]);
+            }else if (clicked.getType() == Material.PAPER && Objects.equals(meta.getItemModel(), NamespacedKey.minecraft("next_b_left"))) {
+                int bpm =Integer.parseInt(Objects.requireNonNull(player.getOpenInventory().getTopInventory().getItem(1)).getPersistentDataContainer().get(getKey.itemTag_key(), PersistentDataType.STRING));
+                int[] bpmlist = {1,2,3,4,5,6,8,10,12,15,16,20,24,25,30,40,48,50,60,75,80,100,120,150,200,240,300,400,600,1200};
+                int selected_bpm = 0;
+                for (int i = 0;i < bpmlist.length;i++) {
+                    if (bpm == bpmlist[i]){
+                        selected_bpm = i;
+                    }
+                }
+                if (selected_bpm >bpmlist.length-7 ) selected_bpm = bpmlist.length-7;
+                if (selected_bpm<1)selected_bpm = 1;
+                openMenu.daw_play_setBPM(player, bpmlist[selected_bpm - 1]);
             }
 
         }

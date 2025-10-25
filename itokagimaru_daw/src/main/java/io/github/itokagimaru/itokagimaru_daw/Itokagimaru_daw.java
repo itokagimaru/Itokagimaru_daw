@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -36,6 +37,15 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
     public static NamespacedKey tempo_key = new NamespacedKey("itokagimaru_daw", "tempo");
     public static NamespacedKey topnote_key = new NamespacedKey("itokagimaru_daw", "topnote");
     public static Itokagimaru_daw instance;
+    public static Optional<HashMap<UUID,Itokagimaru_daw.play>> playing = Optional.of(new HashMap<>());
+    public static class operation_playing{
+        public void set_playing(Player player,Itokagimaru_daw.play play){
+            playing.get().put(player.getUniqueId(),play);
+        }
+        public Itokagimaru_daw.play get_playing(Player player){
+            return playing.get().get(player.getUniqueId());
+        }
+    }
     public static class get_key{
         public NamespacedKey page_key(){
             return page_key;
@@ -152,15 +162,11 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
 
             ItemStack writable = new ItemStack(Material.WRITABLE_BOOK);
             writable.setItemMeta(makeitem.make_itemmeta(writable,"§e打ち込みモード",null,null,null,null));
-            menu.setItem(2, writable);
+            menu.setItem(3, writable);
 
             ItemStack disc = new ItemStack(Material.MUSIC_DISC_13);
             disc.setItemMeta(makeitem.make_itemmeta(disc,"§e再生モード",null,null,null,null));
-            menu.setItem(4, disc);
-
-            ItemStack note = new ItemStack(Material.NOTE_BLOCK);
-            note.setItemMeta(makeitem.make_itemmeta(note,"§e演奏モード",null,null,null,null));
-            menu.setItem(6, note);
+            menu.setItem(5, disc);
 
             ItemStack bar = new ItemStack(Material.BARRIER);
             bar.setItemMeta(makeitem.make_itemmeta(bar,"§4しゅうりょう",null,null,null,null));
@@ -306,21 +312,25 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
             player.openInventory(menu);
         }
         public void daw_play_setBPM(Player player, int bpm) {
-            Inventory menu = Bukkit.createInventory(null,9, Component.text("§b設定/BPM"));
-            ItemStack paper = new ItemStack(Material.PAPER);
-            paper.setItemMeta(makeitem.make_itemmeta(paper,"現在のBPM:" + String.valueOf(bpm),null,"clock",BPM_key,String.valueOf(bpm)));
-
-            menu.setItem(4, paper);
-            ItemStack green = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
-            ItemStack red = new ItemStack(Material.RED_STAINED_GLASS_PANE);
-            for (int i = 3; i > 0 ; i--){
-                red.setItemMeta(makeitem.make_itemmeta(red,"-" + String.valueOf((int) Math.pow(10,3-i)),null,null,itemTag_key,String.valueOf((int) Math.pow(10,3-i) * -1)));
-                menu.setItem(i, red);
+            int[] bpmlist = {1,2,3,4,5,6,8,10,12,15,16,20,24,25,30,40,48,50,60,75,80,100,120,150,200,240,300,400,600,1200};
+            int selected_bpm = 0;
+            for (int i = 0;i < bpmlist.length;i++) {
+                if (bpm == bpmlist[i]){
+                    selected_bpm = i;
+                }
             }
-
-            for (int i = 1; i <= 3 ; i++){
-                green.setItemMeta(makeitem.make_itemmeta(green,"+" + String.valueOf((int) Math.pow(10,i-1)),null,null,itemTag_key,String.valueOf((int) Math.pow(10,i-1))));
-                menu.setItem(i + 4, green);
+            if (selected_bpm >bpmlist.length-7 ) selected_bpm = bpmlist.length-7;
+            Inventory menu = Bukkit.createInventory(null, 9, Component.text("§b設定/BPM"));
+            ItemStack left = new ItemStack(Material.PAPER);
+            ItemStack right = new ItemStack(Material.PAPER);
+            left.setItemMeta(makeitem.make_itemmeta(left,"",null, "next_b_left",null,null));
+            right.setItemMeta(makeitem.make_itemmeta(right,"",null, "next_b_right",null,null));
+            menu.setItem(0, left);
+            menu.setItem(8, right);
+            ItemStack green = new ItemStack(Material.LIME_STAINED_GLASS_PANE);
+            for(int i=0; i<7;i++){
+                green.setItemMeta(makeitem.make_itemmeta(green,"set:" + String.valueOf(bpmlist[selected_bpm + i]),null, null,itemTag_key,String.valueOf(bpmlist[selected_bpm + i])));
+                menu.setItem(i+1, green);
             }
             player.openInventory(menu);
         }
@@ -332,7 +342,7 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
         }
     }
     public static class inventory_save {
-        public static HashMap<UUID, ItemStack[]> inv=new HashMap<>();
+        private HashMap<UUID, ItemStack[]> inv=new HashMap<>();
         public void seaveInventory(Player player){
             inv.put(player.getUniqueId(),player.getInventory().getContents().clone());
         }
@@ -346,7 +356,7 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
         }
     }
     public static class music {
-        public static Map<UUID, int[]> saved_music = new HashMap<>();
+        private Map<UUID, int[]> saved_music = new HashMap<>();
         public void saveMusic(Player player , int[] music){
             saved_music.put(player.getUniqueId(),music);
         }
@@ -370,34 +380,31 @@ public final class Itokagimaru_daw extends JavaPlugin implements Listener {
     public static class play {
         music music = new music();
         HashMap<UUID , BukkitTask> tasks = new HashMap<>();
-        public void stop_my_play(Player player){
-            if (tasks.get(player.getUniqueId()) != null) {
-                BukkitTask task =tasks.get(player.getUniqueId());
-                task.cancel();
-                tasks.remove(player.getUniqueId());
-            }
-
-
-        }
+        BukkitTask task;
         public void play_music (Player player,long interval){
-            BukkitTask task = new BukkitRunnable() {
+            task = new BukkitRunnable() {
                 final int[] loded_music = music.load_Music(player);
                 int count = 0;
                 float pitch = 0;
+                final open_menu open_menu = new open_menu();
+                Itokagimaru_daw.make_item makeitem = new Itokagimaru_daw.make_item();
                 @Override
                 public void run() {
-
-
                     if (loded_music[count] == -1 || count >= loded_music.length) {
+                        ItemStack play = new ItemStack(Material.PAPER);
+                        play.setItemMeta(makeitem.make_itemmeta(play,"再生",null,"next_b_right",null,null));
+                        player.getOpenInventory().getTopInventory().setItem(4,play);
                         cancel();
                     }else if(loded_music[count] != 0){
                         pitch = (float) Math.pow(2.0 , (double) (14 - loded_music[count]) / 12);
-                        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1.0f,pitch);
+                        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_HARP, 1.9f,pitch);
                     }
                     count++;
                 }
             }.runTaskTimer(getInstance(),0,(long) interval);
-            tasks.put(player.getUniqueId(),task);
+        }
+        public void stop_task(){
+            task.cancel();
         }
     }
 }
